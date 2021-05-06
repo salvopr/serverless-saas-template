@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "formrenderer.html" as macros %}
+{% block container %}
+
+<h2>Login</h2>
+<div class="row justify-content-start">
+    <div class="col-md ">
+        <form method="POST">
+        {{ form.hidden_tag() }}
+          <div class="form-group">
+              <label for="email">{{ form.email.label }}</label>
+              {{  macros.render_field(form.email, class_="form-control") }}
+          </div>
+          <div class="form-group">
+              <label for="passowrd">{{ form.password.label }}</label>
+              {{  macros.render_field(form.password, class_="form-control") }}
+          </div>
+          <div class="form-group form-check">
+              {{  macros.render_field(form.remember_me, class_="form-check-input") }}
+              <label for="remember_me"  class="form-check-label">{{ form.remember_me.label }}</label>
+
+          </div>
+
+        <input type="submit" value="Login" class="btn btn-primary">
+        </form>
+        <a href="{{url_for('auth_blueprint.forgot_password')}}">Forgot password?</a>
+        <br>
+        <span>Don't have an account yet?</span>
+        <a href="{{url_for('auth_blueprint.register')}}">Register</a>
+    </div>
+    <div class="col-md">
+    </div>
+
+</div>
+{% endblock %}

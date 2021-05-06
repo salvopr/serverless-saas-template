@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "formrenderer.html" as macros %}
+{% block container %}
+
+<h2>Register</h2>
+<div class="row justify-content-start">
+  <div class="col-md ">
+    <form method="POST">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        <label for="email">{{ form.email.label }}</label>
+        {{  macros.render_field(form.email, class_="form-control") }}
+      </div>
+      <div class="form-group">
+        <label for="password">{{ form.password.label }}</label>
+        {{  macros.render_field(form.password, class_="form-control") }}
+      </div>
+      <div class="form-group">
+        <label for="password2">{{ form.password2.label }}</label>
+        {{  macros.render_field(form.password2, class_="form-control") }}
+      </div>
+      <input type="submit" value="Register" class="btn btn-primary">
+    </form>
+  </div>
+  <div class="col-md"></div>
+</div>
+{% endblock %}

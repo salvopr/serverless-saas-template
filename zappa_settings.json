@@ -1,0 +1,39 @@
+{
+    "dev": {
+        "log_level": "INFO",
+        "app_function": "manage.app",
+        "aws_region": "us-east-1",
+        "profile_name": "default",
+        "project_name": "rewviewcog",
+        "runtime": "python3.8",
+        "s3_bucket": "zappa-rewviewcog-dev",
+        "remote_env": "s3://rewviewcog-data/dev-secrets.json",
+        "environment_variables": {
+              "CONFIG": "dev"
+          },
+        "extra_permissions": [{
+            "Effect": "Allow",
+            "Action": ["ses:*"],
+            "Resource": "*"
+        }]
+    },
+    "prod": {
+        "log_level": "WARNING",
+        "app_function": "manage.app",
+        "aws_region": "us-east-1",
+        "profile_name": "default",
+        "project_name": "rewviewcog",
+        "runtime": "python3.8",
+        "s3_bucket": "zappa-rewviewcog-prod",
+        "remote_env": "s3://rewviewcog-data/prod-secrets.json",
+        "timeout_seconds": 300,
+        "environment_variables": {
+              "CONFIG": "prod"
+          },
+        "extra_permissions": [{
+            "Effect": "Allow",
+            "Action": ["ses:*"],
+            "Resource": "*"
+        }]
+    }
+}
