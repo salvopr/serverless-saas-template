@@ -4,10 +4,10 @@
         "app_function": "manage.app",
         "aws_region": "us-east-1",
         "profile_name": "default",
-        "project_name": "rewviewcog",
+        "project_name": "mysaas",
         "runtime": "python3.8",
-        "s3_bucket": "zappa-rewviewcog-dev",
-        "remote_env": "s3://rewviewcog-data/dev-secrets.json",
+        "s3_bucket": "zappa-mysaas-dev",
+        "remote_env": "s3://mysaas-data/dev-secrets.json",
         "environment_variables": {
               "CONFIG": "dev"
           },
@@ -22,10 +22,10 @@
         "app_function": "manage.app",
         "aws_region": "us-east-1",
         "profile_name": "default",
-        "project_name": "rewviewcog",
+        "project_name": "mysaas",
         "runtime": "python3.8",
-        "s3_bucket": "zappa-rewviewcog-prod",
-        "remote_env": "s3://rewviewcog-data/prod-secrets.json",
+        "s3_bucket": "zappa-mysaas-prod",
+        "remote_env": "s3://mysaas-data/prod-secrets.json",
         "timeout_seconds": 300,
         "environment_variables": {
               "CONFIG": "prod"

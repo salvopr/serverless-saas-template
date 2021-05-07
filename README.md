@@ -1,6 +1,6 @@
-This SaaS template allows to quickly test an app idea without any investments into infrastructure. 
+This SaaS template allows quickly test an web app idea without any investments into infrastructure with the help of AWS Free Tier 
 
-It uses:
+It uses these serverless services:
 - AWS Lambda runtime
 - API Gateway for HTTP(s) proxy
 - DynamoDB in on-demand mode for storage
@@ -14,17 +14,23 @@ It runs on:
 - Zappa (converts Flask to AWS Lambda)
 - Bootstrap 4 for server-side rendered frontend
 
-Features:
+## Features:
+- user management (registration, activation, password reset, login)
+- transactional email (registration activation, password reset) 
+
+## Change log:
+
 06.05.2021
 - Basic Flask app
 - authentication blueprint for user registration, login, password reset
 
 ToDo
-- Cloudformation templates for tables
-- Codepipeline template for CI/CD
+- Cloudformation templates for AWS resources
+- Cloudformation templates for Codepipeline CI/CD
 - Stripe payments
-- Convert projec to to cookie-cutter template
-- Extensive docs in how to run
+- Convert project to cookie-cutter template
+- admin space 
+- Deploy guide
 
 Contact me on [LinkedIn](https://www.linkedin.com/in/smirnovam/) if you are interested in using this template for your SaaS MVP
 

@@ -10,15 +10,15 @@ class Config:
 
 
 class DevConfig(Config):
-    USERS_TABLE = 'reviewcog-users-dev'
-    AUTH_TOKENS_TABLE = 'reviewcog-auth-dev'
-    EVENT_TABLE = 'reviewcog-events-dev'
+    USERS_TABLE = 'mysaas-users-dev'
+    AUTH_TOKENS_TABLE = 'mysaas-auth-dev'
+    EVENT_TABLE = 'mysaas-events-dev'
 
 
 class ProdConfig(Config):
-    USERS_TABLE = 'reviewcog-users-prod'
-    AUTH_TOKENS_TABLE = 'reviewcog-auth-prod'
-    EVENT_TABLE = 'reviewcog-events-prod'
+    USERS_TABLE = 'mysaas-users-prod'
+    AUTH_TOKENS_TABLE = 'mysaas-auth-prod'
+    EVENT_TABLE = 'mysaas-events-prod'
 
 
 configs = {
