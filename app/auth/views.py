@@ -5,14 +5,14 @@ from flask_login import current_user, login_user, logout_user
 from . import auth_blueprint
 from app.auth.forms import LoginForm, RegistrationForm, ForgotPasswordForm, ResetPasswordForm
 from app.user import User
-from app.exceptions import UserError, UserDoesNotExists
+from app.exceptions import UserDoesNotExists
 from app.auth.tokens import create_token, token_user_id
 
 
 @auth_blueprint.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("auth_blueprint.links_page"))
+        return redirect(url_for("platform_blueprint.index"))
     form = LoginForm()
     if form.validate_on_submit():
         user = None
@@ -25,15 +25,12 @@ def login():
         except UserDoesNotExists:
             flash("User is not registered", "danger")
             return redirect(url_for("auth_blueprint.login"))
-        except UserError:
-            print(f"User error in login")
-            traceback.print_exc()
 
         if not user.authenticate(form.password.data):
             flash("Invalid password", "danger")
             return redirect(url_for("auth_blueprint.login"))
         login_user(user, remember=form.remember_me.data)
-        return redirect(url_for("admin_blueprint.index"))
+        return redirect(url_for("platform_blueprint.index"))
     return render_template("auth/login.html", form=form)
 
 

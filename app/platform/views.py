@@ -1,8 +1,8 @@
 from flask_login import login_required
-from . import admin_blueprint
+from . import platform_blueprint
 
 
-@admin_blueprint.route("/", methods=["GET", "POST"])
+@platform_blueprint.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-    return 'ok'
+    return 'this page is for platform user'

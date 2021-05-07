@@ -8,12 +8,9 @@ from app.email import send_email
 
 
 def load_user(user_id):
-    try:
-        user = User(user_id)
-        user.load()
-        return user
-    except UserError as e:
-        print(f"User error while loading for {user_id} {str(e)}")
+    user = User(user_id)
+    user.load()
+    return user
 
 
 def decrypt(token):
@@ -29,6 +26,7 @@ class User:
         self.email = email
         self.password_token = None
         self.activated = False
+        self.is_admin = False
         dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
         self.table = dynamodb.Table(current_config.USERS_TABLE)
 
@@ -47,6 +45,8 @@ class User:
             user_data = response['Item']
             self.password_token = user_data["password_token"]
             self.activated = bool(user_data["activated"])
+            self.is_admin = bool(user_data.get("is_admin", False))
+
         except ClientError as e:
             raise UserError("Cannot load user data from DB " + e.response['Error']['Message']) from e
         except KeyError as e:

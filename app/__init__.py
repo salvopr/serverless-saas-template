@@ -18,13 +18,19 @@ def create_app():
     login_manager.login_view = "auth_blueprint.login"
 
     from .front import front_blueprint
-    app.register_blueprint(front_blueprint, url_prefix='/front')
+    app.register_blueprint(front_blueprint, url_prefix='/')
 
     from .auth import auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
     from .admin import admin_blueprint
     app.register_blueprint(admin_blueprint, url_prefix='/admin')
+
+    from .platform import platform_blueprint
+    app.register_blueprint(platform_blueprint, url_prefix='/platform')
+
+    from .payments import payments_blueprint
+    app.register_blueprint(payments_blueprint, url_prefix='/payments')
 
     app.register_error_handler(TokenError, error_handler)
     app.register_error_handler(UserError, error_handler)
