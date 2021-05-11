@@ -15,7 +15,8 @@ It runs on:
 
 ## Features:
 - user management (registration, activation, password reset, login)
-- transactional email (registration activation, password reset, payment problems, trial period end) 
+- transactional email (registration activation, password reset, payment problems, trial period end)
+- payments administration (subscriptions with Stripe Connect, trial, customer portal for payment management)  
 - admin page to show monthly recurrent revenue (MRR), monthly active users (MAU), churn rate
 - easy setup with extensive Deploy Guide that also includes steps to tailor the app to your needs
 
