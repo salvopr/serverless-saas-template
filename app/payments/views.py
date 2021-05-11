@@ -2,39 +2,57 @@ import os
 import json
 
 import stripe
-from flask import request, jsonify
+from flask import request, jsonify, redirect, url_for, flash, render_template
+from flask_login import login_required
 
 from . import payments_blueprint
+from config import current_config
+from app.payments.plans import get_prices_from_stripe, TRIAL_DAYS
+stripe.api_key = current_config.STRIPE_SEC_KEY
 
-stripe.api_key = "sk_test_51IF07JIpW5sI31jNntEdiadLtquYkTmZMT5bWrzCtX"  # TODO
 
-
-@payments_blueprint.route('/', methods=["POST"])
+@payments_blueprint.route('/', methods=["GET"])
+@login_required
 def index():
-    return 'this is page with payment info for platform user'
+    payment_plans = get_prices_from_stripe()
+    return render_template('payments/index.html', payment_plans=payment_plans)
+
+
+@payments_blueprint.route('/success', methods=["GET"])
+@login_required
+def success():
+    flash("Payment succeeded! Provisioning subscription.", "success")
+    return redirect(url_for("payments_blueprint.index"))
+
+
+@payments_blueprint.route('/cancel', methods=["GET"])
+@login_required
+def cancel():
+    flash("Payment canceled!", "warning")
+    return redirect(url_for("payments_blueprint.index"))
 
 
 @payments_blueprint.route('/create-checkout-session', methods=['POST'])
+@login_required
 def create_checkout_session():
     data = json.loads(request.data)
 
     try:
-        # See https://stripe.com/docs/api/checkout/sessions/create
-        # for additional parameters to pass.
-        # {CHECKOUT_SESSION_ID} is a string literal; do not change it!
-        # the actual Session ID is returned in the query parameter when your customer
-        # is redirected to the success page.
-        checkout_session = stripe.checkout.Session.create(
-            success_url='https://example.com/success.html?session_id={CHECKOUT_SESSION_ID}',  # TODO
-            cancel_url='https://example.com/canceled.html',  # TODO
+        success_url = f"https://{current_config.DOMAIN}{url_for('payments_blueprint.success')}"
+        cancel_url = f"https://{current_config.DOMAIN}{url_for('payments_blueprint.cancel')}"
+        checkout_session_params = dict(
+            success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=cancel_url,
             payment_method_types=['card'],
             mode='subscription',
             line_items=[{
                 'price': data['priceId'],
-                # For metered billing, do not pass quantity
                 'quantity': 1
-            }],
+            }]
         )
+        if TRIAL_DAYS >= 1:
+            checkout_session_params["subscription_data"] = {"trial_period_days": TRIAL_DAYS}
+        checkout_session = stripe.checkout.Session.create(**checkout_session_params)
         return jsonify({'sessionId': checkout_session['id']})
     except Exception as e:
         return jsonify({'error': {'message': str(e)}}), 400
@@ -42,11 +60,10 @@ def create_checkout_session():
 
 @payments_blueprint.route('/webhook', methods=['POST'])
 def webhook_received():
-    webhook_secret = {{'STRIPE_WEBHOOK_SECRET'}}  # TODO
+    webhook_secret = current_config.STRIPE_ENDPOINT_KEY
     request_data = json.loads(request.data)
 
     if webhook_secret:
-        # Retrieve the event by verifying the signature using the raw body and secret if webhook signing is configured.
         signature = request.headers.get('stripe-signature')
         try:
             event = stripe.Webhook.construct_event(
@@ -54,7 +71,6 @@ def webhook_received():
             data = event['data']
         except Exception as e:
             return e
-        # Get the type of webhook event sent - used to check the status of PaymentIntents.
         event_type = event['type']
     else:
         data = request_data['data']
@@ -75,6 +91,13 @@ def webhook_received():
         # The subscription becomes past_due. Notify your customer and send them to the
         # customer portal to update their payment information.
         print(data)  # TODO
+    elif event_type == 'invoice.payment_action_required':
+        print(data)
+    elif event_type == 'customer.subscription.trial_will_end':
+        print(data)
+    elif event_type == 'customer.subscription.updated':
+        # track statuses past_due, cancelled, unpaid
+        print(data)
     else:
         print('Unhandled event type {}'.format(event_type))
 
@@ -82,6 +105,7 @@ def webhook_received():
 
 
 @payments_blueprint.route('/customer-portal', methods=['POST'])
+@login_required
 def customer_portal():
     # This is the URL to which the customer will be redirected after they are
     # done managing their billing with the portal.

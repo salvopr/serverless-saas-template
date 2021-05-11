@@ -27,6 +27,9 @@ class User:
         self.password_token = None
         self.activated = False
         self.is_admin = False
+        self.is_paying = False
+        self.subscription_status = None
+        self.stripe_customer_id = None
         dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
         self.table = dynamodb.Table(current_config.USERS_TABLE)
 
@@ -46,7 +49,9 @@ class User:
             self.password_token = user_data["password_token"]
             self.activated = bool(user_data["activated"])
             self.is_admin = bool(user_data.get("is_admin", False))
-
+            self.is_paying = bool(user_data.get("is_paying", False))
+            self.stripe_customer_id = user_data.get("stripe_customer_id")
+            self.subscription_status = user_data.get("subscription_status")
         except ClientError as e:
             raise UserError("Cannot load user data from DB " + e.response['Error']['Message']) from e
         except KeyError as e:
@@ -74,7 +79,7 @@ class User:
         return self.email
 
     def activate(self):
-        self._update("activated", True)
+        self.update("activated", True)
 
     def register(self, password):
         try:
@@ -93,7 +98,7 @@ class User:
         try:
             f = Fernet(current_config.SECRET_KEY)
             token = f.encrypt(password.encode("ascii")).decode('ascii')
-            self._update("password_token", token)
+            self.update("password_token", token)
         except ClientError as e:
             raise UserError("Cannot reset user password " + e.response['Error']['Message']) from e
 
@@ -103,7 +108,7 @@ class User:
     def send_password_reset_email(self, token):
         send_email(self.email, "PASSWORD_RESET", token=token)
 
-    def _update(self, param, value):
+    def update(self, param, value):
         try:
             self.table.update_item(
                 Key={

@@ -1,12 +1,10 @@
-from flask import abort
-from flask_login import login_required, current_user
+from flask_login import login_required
 from . import admin_blueprint
+from app.admin.admin_required import admin_required
 
 
 @admin_blueprint.route("/", methods=["GET", "POST"])
 @login_required
+@admin_required
 def index():
-    if current_user.is_authenticated and current_user.is_admin:
-        return 'this page is for platform owner'
-    else:
-        abort(401)
+    return 'this page is for platform owner'

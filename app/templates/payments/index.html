@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "formrenderer.html" as macros %}
+{% block container %}
+
+<h2>Payment console</h2>
+{% for plan in payment_plans %}
+<button class="checkout btn btn-success" data-priceid="{{plan['price_id']}}">
+  Subscribe to {{plan['product_name']}} plan
+  for {{plan['amount']//100}}{{plan['currency']}}/{{plan['interval']}}</button>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_head_scripts %}
+<script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+
+{% block extra_body_scripts %}
+<script>
+var createCheckoutSession = function(priceId) {
+  return fetch("{{url_for('payments_blueprint.create_checkout_session')}}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      priceId: priceId
+    })
+  }).then(function(result) {
+    return result.json();
+  });
+};
+
+var handleResult = function(result) {
+  if (result.error) {
+    alert(result.error.message);
+  }
+};
+var stripe = Stripe("{{config.STRIPE_PUB_KEY}}");
+var subscribe_buttons = document.getElementsByClassName("checkout");
+for(let i = 0; i < subscribe_buttons.length; i++) {
+
+  subscribe_buttons[i].addEventListener("click", function(evt) {
+    //console.log(subscribe_buttons[i].dataset.priceid);
+    createCheckoutSession(subscribe_buttons[i].dataset.priceid).then(function(data) {
+      stripe
+        .redirectToCheckout({
+          sessionId: data.sessionId
+        })
+        .then(handleResult);
+    });
+  });
+}
+</script>
+{% endblock %}
