@@ -1,8 +1,7 @@
-This SaaS template allows quickly test an web app idea without any investments into infrastructure with the help of AWS Free Tier 
+This SaaS template allows quickly test a web app idea without any investments into infrastructure with the help of AWS Free Tier 
 
 It uses these serverless services:
-- AWS Lambda runtime
-- API Gateway for HTTP(s) proxy
+- AWS Lambda + API Gateway to serve the app
 - DynamoDB in on-demand mode for storage
 - AWS SES as email provider
 - Stripe for payments
@@ -16,7 +15,9 @@ It runs on:
 
 ## Features:
 - user management (registration, activation, password reset, login)
-- transactional email (registration activation, password reset) 
+- transactional email (registration activation, password reset, payment problems, trial period end) 
+- admin page to show monthly recurrent revenue (MMR), monthly active users (MAU), churn rate
+- easy setup with extensive Deploy Guide that also includes steps to tailor the app to your needs
 
 ## Change log:
 11.05.2021
@@ -27,13 +28,6 @@ It runs on:
 - Basic Flask app
 - Authentication blueprint for user registration, login, password reset
 
-ToDo
-- Cloudformation templates for AWS resources
-- Cloudformation templates for Codepipeline CI/CD
-- Stripe payments
-- Convert project to cookie-cutter template
-- admin space 
-- Deploy guide
 
 Contact me on [LinkedIn](https://www.linkedin.com/in/smirnovam/) if you are interested in using this template for your SaaS MVP
 
