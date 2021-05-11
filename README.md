@@ -16,7 +16,7 @@ It runs on:
 ## Features:
 - user management (registration, activation, password reset, login)
 - transactional email (registration activation, password reset, payment problems, trial period end) 
-- admin page to show monthly recurrent revenue (MMR), monthly active users (MAU), churn rate
+- admin page to show monthly recurrent revenue (MRR), monthly active users (MAU), churn rate
 - easy setup with extensive Deploy Guide that also includes steps to tailor the app to your needs
 
 ## Change log:
