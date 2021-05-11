@@ -19,10 +19,13 @@ It runs on:
 - transactional email (registration activation, password reset) 
 
 ## Change log:
+11.05.2021
+- Fetching prices and products from Stripe
+- checkout session stripe hook and redirect
 
 06.05.2021
 - Basic Flask app
-- authentication blueprint for user registration, login, password reset
+- Authentication blueprint for user registration, login, password reset
 
 ToDo
 - Cloudformation templates for AWS resources
