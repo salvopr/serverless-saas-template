@@ -5,7 +5,7 @@ from flask_login import LoginManager
 
 from config import current_config
 from app.user import load_user
-from app.exceptions import TokenError, UserError
+from app.exceptions import TokenError, UserError, PaymentError
 
 
 def create_app():
@@ -34,14 +34,11 @@ def create_app():
 
     app.register_error_handler(TokenError, error_handler)
     app.register_error_handler(UserError, error_handler)
+    app.register_error_handler(PaymentError, error_handler)
     return app
 
 
 def error_handler(e):
-    print(f"Unhandled exception {e}")
+    print(f"Application exception {e}")
     traceback.print_tb(e.__traceback__)
-    if isinstance(e, TokenError):
-        msg = "Token not valid!"
-    else:
-        msg = "Something went wrong!"
-    return render_template("msg.html", msg=msg)
+    return render_template("msg.html", msg=str(e))

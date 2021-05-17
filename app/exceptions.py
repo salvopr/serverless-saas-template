@@ -8,3 +8,7 @@ class UserDoesNotExists(UserError):
 
 class TokenError(Exception):
     pass
+
+
+class PaymentError(Exception):
+    pass

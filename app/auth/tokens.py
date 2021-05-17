@@ -38,4 +38,4 @@ def token_user_id(token, token_type):
     except ClientError as e:
         raise TokenError("Cannot get token " + e.response['Error']['Message']) from e
     except KeyError as e:
-        raise TokenError(f"Token in not valid {token} {token_type}") from e
+        raise TokenError(f"Token is not valid {token} {token_type}") from e

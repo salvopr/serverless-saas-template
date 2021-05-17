@@ -3,6 +3,9 @@
 {% block container %}
 
 <h2>Payment console</h2>
+
+<span>Your subscription status is {{current_user.subscription_status}}</span>
+
 {% for plan in payment_plans %}
 <button class="checkout btn btn-success" data-priceid="{{plan['price_id']}}">
   Subscribe to {{plan['product_name']}} plan

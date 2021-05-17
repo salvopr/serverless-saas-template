@@ -1,5 +1,7 @@
 TEMPLATES = {"REGISTRATION": "",
-             "PASSWORD_RESET": ""}
+             "PASSWORD_RESET": "",
+             "PAYMENT_PROBLEM": "",
+             "TRIAL_END": ""}
 
 
 def send_email(email, template, token=None):

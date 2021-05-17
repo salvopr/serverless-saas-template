@@ -8,6 +8,8 @@ from flask_login import login_required
 from . import payments_blueprint
 from config import current_config
 from app.payments.plans import get_prices_from_stripe, TRIAL_DAYS
+from app.user import load_user
+from app.exceptions import PaymentError
 stripe.api_key = current_config.STRIPE_SEC_KEY
 
 
@@ -55,49 +57,67 @@ def create_checkout_session():
         checkout_session = stripe.checkout.Session.create(**checkout_session_params)
         return jsonify({'sessionId': checkout_session['id']})
     except Exception as e:
-        return jsonify({'error': {'message': str(e)}}), 400
+        raise PaymentError("cannot create checkout session") from e
+
+
+def webhook_data(webhook_request_data):
+    webhook_secret = current_config.STRIPE_ENDPOINT_KEY
+
+    if webhook_secret:
+        signature = webhook_request_data.headers.get('stripe-signature')
+        try:
+            event = stripe.Webhook.construct_event(
+                payload=webhook_request_data.data,
+                sig_header=signature,
+                secret=webhook_secret
+            )
+            data = event['data']
+        except Exception as e:
+            raise PaymentError("cannot decode webhook request") from e
+        event_type = event['type']
+    else:
+        request_data = json.loads(webhook_request_data.data)
+        data = request_data['data']
+        event_type = request_data['type']
+
+    data_object = data['object']
+    return event_type, data_object
+
+
+def find_webhook_user(data_object):
+    if 'customer_email' in data_object:  # checkout session or invoice events
+        email = data_object['customer_email']
+    else:  # applied to subscription data object that has only customer ID
+        customer = stripe.Customer.retrieve(data_object["customer"])
+        email = customer['email']
+
+    user = load_user(email)
+    return user
 
 
 @payments_blueprint.route('/webhook', methods=['POST'])
 def webhook_received():
-    webhook_secret = current_config.STRIPE_ENDPOINT_KEY
-    request_data = json.loads(request.data)
-
-    if webhook_secret:
-        signature = request.headers.get('stripe-signature')
-        try:
-            event = stripe.Webhook.construct_event(
-                payload=request.data, sig_header=signature, secret=webhook_secret)
-            data = event['data']
-        except Exception as e:
-            return e
-        event_type = event['type']
-    else:
-        data = request_data['data']
-        event_type = request_data['type']
-    data_object = data['object']
+    event_type, data_object = webhook_data(request)
+    user = find_webhook_user(data_object)
 
     if event_type == 'checkout.session.completed':
-        # Payment is successful and the subscription is created.
-        # You should provision the subscription and save the customer ID to your database.
-        print(data)  # TODO
+        user.checkout_completed(data_object['customer'])
+
     elif event_type == 'invoice.paid':
-        # Continue to provision the subscription as payments continue to be made.
-        # Store the status in your database and check when a user accesses your service.
-        # This approach helps you avoid hitting rate limits.
-        print(data)  # TODO
+        user.invoice_paid()
+
     elif event_type == 'invoice.payment_failed':
-        # The payment failed or the customer does not have a valid payment method.
-        # The subscription becomes past_due. Notify your customer and send them to the
-        # customer portal to update their payment information.
-        print(data)  # TODO
+        user.invoice_payment_failed()
+
     elif event_type == 'invoice.payment_action_required':
-        print(data)
+        user.payment_action_required()
+
     elif event_type == 'customer.subscription.trial_will_end':
-        print(data)
+        user.trial_end()
+
     elif event_type == 'customer.subscription.updated':
-        # track statuses past_due, cancelled, unpaid
-        print(data)
+        if data_object["status"] in ("past_due", "canceled", "unpaid"):
+            user.subscription_invalid(data_object["status"])
     else:
         print('Unhandled event type {}'.format(event_type))
 

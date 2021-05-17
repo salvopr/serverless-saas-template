@@ -82,8 +82,24 @@ def stripe_plans():
 
 
 @pytest.fixture(autouse=True)
-def stripe_session():
+def stripe_session(email):
     with patch('app.payments.views.stripe') as mock_stripe:
         mock_stripe.checkout.Session.create = MagicMock(return_value={"id": "checkout_session_id"})
+        mock_stripe.Customer.retrieve = MagicMock(return_value={"email": email})
         yield mock_stripe
 
+
+@pytest.fixture
+def user_table():
+    dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
+    table = dynamodb.Table(current_config.USERS_TABLE)
+    return table
+
+
+@pytest.fixture
+def register_user(email, user_table):
+    user_table.put_item(
+        Item={"email": email,
+              "password_token": 'token',
+              "activated": True}
+    )

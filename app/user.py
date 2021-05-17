@@ -51,7 +51,7 @@ class User:
             self.is_admin = bool(user_data.get("is_admin", False))
             self.is_paying = bool(user_data.get("is_paying", False))
             self.stripe_customer_id = user_data.get("stripe_customer_id")
-            self.subscription_status = user_data.get("subscription_status")
+            self.subscription_status = user_data.get("subscription_status", "Not started")
         except ClientError as e:
             raise UserError("Cannot load user data from DB " + e.response['Error']['Message']) from e
         except KeyError as e:
@@ -79,7 +79,7 @@ class User:
         return self.email
 
     def activate(self):
-        self.update("activated", True)
+        self._update("activated", True)
 
     def register(self, password):
         try:
@@ -98,17 +98,14 @@ class User:
         try:
             f = Fernet(current_config.SECRET_KEY)
             token = f.encrypt(password.encode("ascii")).decode('ascii')
-            self.update("password_token", token)
+            self._update("password_token", token)
         except ClientError as e:
             raise UserError("Cannot reset user password " + e.response['Error']['Message']) from e
 
-    def send_registration_email(self, token):
-        send_email(self.email, "REGISTRATION", token=token)
+    def send_email(self, template, token):
+        send_email(self.email, template, token=token)
 
-    def send_password_reset_email(self, token):
-        send_email(self.email, "PASSWORD_RESET", token=token)
-
-    def update(self, param, value):
+    def _update(self, param, value):
         try:
             self.table.update_item(
                 Key={
@@ -123,3 +120,30 @@ class User:
             setattr(self, param, value)
         except ClientError as e:
             raise UserError("Cannot update user data from DB " + e.response['Error']['Message']) from e
+
+    def checkout_completed(self, stripe_customer_id):
+        self._update("subscription_status", "checkout_completed")
+        self._update("is_paying", True)
+        self._update("stripe_customer_id", stripe_customer_id)
+
+    def invoice_paid(self):
+        self._update("subscription_status", "invoice_paid")
+        self._update("is_paying", True)
+
+    def invoice_payment_failed(self):
+        self._update("subscription_status", "invoice_payment_failed")
+        self._update("is_paying", False)
+        self.send_email("PAYMENT_PROBLEM", token=None)
+
+    def payment_action_required(self):
+        self._update("subscription_status", "payment_action_required")
+        self._update("is_paying", False)
+        self.send_email("PAYMENT_PROBLEM", token=None)
+
+    def trial_end(self):
+        self.send_email("TRIAL_END", token=None)
+
+    def subscription_invalid(self, status):
+        self._update("subscription_status", status)
+        self._update("is_paying", False)
+        self.send_email("PAYMENT_PROBLEM", token=None)
