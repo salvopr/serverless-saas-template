@@ -21,6 +21,9 @@ It runs on:
 - easy setup with extensive Deploy Guide that also includes steps to tailor the app to your needs
 
 ## Change log:
+17.05.2021
+- stripe webhook and user payment statuses
+
 11.05.2021
 - Fetching prices and products from Stripe
 - checkout session stripe hook and redirect
