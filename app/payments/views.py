@@ -1,9 +1,8 @@
-import os
 import json
 
 import stripe
 from flask import request, jsonify, redirect, url_for, flash, render_template
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from . import payments_blueprint
 from config import current_config
@@ -115,11 +114,14 @@ def webhook_received():
     elif event_type == 'customer.subscription.trial_will_end':
         user.trial_end()
 
-    elif event_type == 'customer.subscription.updated':
-        if data_object["status"] in ("past_due", "canceled", "unpaid"):
-            user.subscription_invalid(data_object["status"])
+    elif event_type == 'customer.subscription.updated' and data_object["status"] in ("past_due", "canceled", "unpaid"):
+        user.subscription_invalid(data_object["status"])
+
+    elif event_type == 'customer.subscription.deleted':
+        user.subscription_deleted()
     else:
-        print('Unhandled event type {}'.format(event_type))
+        user.subscription_default_event(event_type)
+        print(f'Unhandled event type {event_type}\n{data_object}')
 
     return jsonify({'status': 'success'})
 
@@ -127,11 +129,7 @@ def webhook_received():
 @payments_blueprint.route('/customer-portal', methods=['POST'])
 @login_required
 def customer_portal():
-    # This is the URL to which the customer will be redirected after they are
-    # done managing their billing with the portal.
-    return_url = os.getenv("DOMAIN")  # TODO
-
     session = stripe.billing_portal.Session.create(
-        customer='{{CUSTOMER_ID}}',
-        return_url=return_url)
+        customer=current_user.stripe_customer_id,
+        return_url=f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}")
     return jsonify({'url': session.url})

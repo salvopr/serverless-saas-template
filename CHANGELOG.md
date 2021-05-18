@@ -1,4 +1,7 @@
 ## Change log:
+18.05.2021
+- stripe customer portal redirect to manage billing and subscription
+- added requirements.txt
 17.05.2021
 - stripe webhook and user payment statuses
 

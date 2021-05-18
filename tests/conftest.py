@@ -86,6 +86,9 @@ def stripe_session(email):
     with patch('app.payments.views.stripe') as mock_stripe:
         mock_stripe.checkout.Session.create = MagicMock(return_value={"id": "checkout_session_id"})
         mock_stripe.Customer.retrieve = MagicMock(return_value={"email": email})
+        customer_portal = MagicMock()
+        customer_portal.url = 'test_customer_portal_url'
+        mock_stripe.billing_portal.Session.create = MagicMock(return_value=customer_portal)
         yield mock_stripe
 
 
@@ -101,5 +104,6 @@ def register_user(email, user_table):
     user_table.put_item(
         Item={"email": email,
               "password_token": 'token',
-              "activated": True}
+              "activated": True,
+              "stripe_customer_id": "stripe_customer_id_123"}
     )

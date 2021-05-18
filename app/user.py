@@ -147,3 +147,12 @@ class User:
         self._update("subscription_status", status)
         self._update("is_paying", False)
         self.send_email("PAYMENT_PROBLEM", token=None)
+
+    def subscription_deleted(self):
+        self._update("subscription_status", "deleted")
+        self._update("is_paying", False)
+        self.send_email("SUBSCRIPTION DELETED", token=None)
+
+    def subscription_default_event(self, status):
+        self._update("subscription_status", status)
+

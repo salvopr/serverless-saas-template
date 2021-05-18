@@ -4,14 +4,20 @@
 
 <h2>Payment console</h2>
 
-<span>Your subscription status is {{current_user.subscription_status}}</span>
-
-{% for plan in payment_plans %}
-<button class="checkout btn btn-success" data-priceid="{{plan['price_id']}}">
-  Subscribe to {{plan['product_name']}} plan
-  for {{plan['amount']//100}}{{plan['currency']}}/{{plan['interval']}}</button>
-{% endfor %}
-
+<span>Your subscription status is {{current_user.subscription_status}} {{current_user.is_paying}}</span>
+<br><br>
+{% if not current_user.is_paying %}
+  {% for plan in payment_plans %}
+  <button class="checkout btn btn-success" data-priceid="{{plan['price_id']}}">
+    Subscribe to {{plan['product_name']}} plan
+    for {{plan['amount']//100}}{{plan['currency']}}/{{plan['interval']}}</button>
+  <br><br>
+  {% endfor %}
+{% else %}
+<form id="manage-billing-form">
+  <button class="btn btn-success">Manage Billing</button>
+</form>
+{% endif %}
 {% endblock %}
 
 {% block extra_head_scripts %}
@@ -54,5 +60,22 @@ for(let i = 0; i < subscribe_buttons.length; i++) {
     });
   });
 }
+
+const manageBillingForm = document.querySelector('#manage-billing-form');
+manageBillingForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  fetch("{{url_for('payments_blueprint.customer_portal')}}", {
+    method: 'POST'
+  })
+    .then(function(response) {
+      return response.json()
+    })
+    .then(function(data) {
+      window.location.href = data.url;
+    })
+    .catch(function(error) {
+      console.error('Error:', error);
+    });
+});
 </script>
 {% endblock %}

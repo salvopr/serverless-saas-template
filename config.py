@@ -14,17 +14,17 @@ class Config:
 
 
 class DevConfig(Config):
-    USERS_TABLE = 'mysaas-users-dev'
-    AUTH_TOKENS_TABLE = 'mysaas-auth-dev'
-    EVENT_TABLE = 'mysaas-events-dev'
-    DOMAIN = "mysaas.com"  # no http prefix
+    USERS_TABLE = os.environ.get('USERS_TABLE', 'mysaas-users-dev')
+    AUTH_TOKENS_TABLE = os.environ.get('AUTH_TOKENS_TABLE', 'mysaas-auth-dev')
+    EVENT_TABLE = os.environ.get('EVENT_TABLE', 'mysaas-events-dev')
+    DOMAIN = os.environ.get('DOMAIN', "mysaas.com")  # no http prefix and trailing slash
 
 
 class ProdConfig(Config):
-    USERS_TABLE = 'mysaas-users-prod'
-    AUTH_TOKENS_TABLE = 'mysaas-auth-prod'
-    EVENT_TABLE = 'mysaas-events-prod'
-    DOMAIN = "mysaas.com"  # no http prefix
+    USERS_TABLE = os.environ.get('USERS_TABLE', 'mysaas-users-prod')
+    AUTH_TOKENS_TABLE = os.environ.get('AUTH_TOKENS_TABLE', 'mysaas-auth-prod')
+    EVENT_TABLE = os.environ.get('EVENT_TABLE', 'mysaas-events-prod')
+    DOMAIN = os.environ.get('DOMAIN', "mysaas.com")  # no http prefix and trailing slash
 
 
 configs = {
