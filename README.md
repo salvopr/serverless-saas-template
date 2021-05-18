@@ -20,18 +20,6 @@ It runs on:
 - admin page to show monthly recurrent revenue (MRR), monthly active users (MAU), churn rate, Lifetime value (LTV)
 - easy setup with extensive Deploy Guide that also includes steps to tailor the app to your needs
 
-## Change log:
-17.05.2021
-- stripe webhook and user payment statuses
-
-11.05.2021
-- Fetching prices and products from Stripe
-- checkout session stripe hook and redirect
-
-06.05.2021
-- Basic Flask app
-- Authentication blueprint for user registration, login, password reset
-
 
 Contact me on [LinkedIn](https://www.linkedin.com/in/smirnovam/) if you are interested in using this template for your SaaS MVP
 
