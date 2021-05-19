@@ -2,9 +2,11 @@ import boto3
 from botocore.exceptions import ClientError
 from cryptography.fernet import Fernet
 
+from flask import url_for
+
 from config import current_config
 from app.exceptions import UserError, UserDoesNotExists
-from app.email import send_email
+from app.email import send_email, EmailTemplateNames
 
 
 def load_user(user_id):
@@ -102,8 +104,19 @@ class User:
         except ClientError as e:
             raise UserError("Cannot reset user password " + e.response['Error']['Message']) from e
 
-    def send_email(self, template, token):
-        send_email(self.email, template, token=token)
+    def send_password_reset_email(self, token):
+        url = f"https://{current_config.DOMAIN}{url_for('auth_blueprint.password_reset', token=token)}"
+        send_email(self.email, EmailTemplateNames.PASSWORD_RESET,
+                   render_params={
+                       "url": url
+                   })
+
+    def send_activation_email(self, token):
+        url = f"https://{current_config.DOMAIN}{url_for('auth_blueprint.activate', token=token)}"
+        send_email(self.email, EmailTemplateNames.REGISTRATION,
+                   render_params={
+                       "url": url
+                   })
 
     def _update(self, param, value):
         try:
@@ -133,25 +146,43 @@ class User:
     def invoice_payment_failed(self):
         self._update("subscription_status", "invoice_payment_failed")
         self._update("is_paying", False)
-        self.send_email("PAYMENT_PROBLEM", token=None)
+        send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
+                   render_params={
+                       "subscription_status": "invoice_payment_failed",
+                       "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
+                   })
 
     def payment_action_required(self):
         self._update("subscription_status", "payment_action_required")
         self._update("is_paying", False)
-        self.send_email("PAYMENT_PROBLEM", token=None)
+        send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
+                   render_params={
+                       "subscription_status": "payment_action_required",
+                       "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
+                   })
 
     def trial_end(self):
-        self.send_email("TRIAL_END", token=None)
+        send_email(self.email, EmailTemplateNames.TRIAL_END,
+                   render_params={
+                       "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
+                   })
 
     def subscription_invalid(self, status):
         self._update("subscription_status", status)
         self._update("is_paying", False)
-        self.send_email("PAYMENT_PROBLEM", token=None)
+        send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
+                   render_params={
+                       "subscription_status": status,
+                       "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
+                   })
 
     def subscription_deleted(self):
         self._update("subscription_status", "deleted")
         self._update("is_paying", False)
-        self.send_email("SUBSCRIPTION DELETED", token=None)
+        send_email(self.email, EmailTemplateNames.SUBSCRIPTION_DELETED,
+                   render_params={
+                       "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
+                   })
 
     def subscription_default_event(self, status):
         self._update("subscription_status", status)

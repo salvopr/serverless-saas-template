@@ -49,7 +49,7 @@ def register():
         user = User(form.email.data)
         user.register(form.password.data)
         token = create_token("REGISTRATION", user.email)
-        user.send_email("REGISTRATION", token)
+        user.send_activation_email(token)
         flash("Congratulations, you are now a registered user! Check you email for an activation link", "success")
         return redirect(url_for("auth_blueprint.login"))
     return render_template("auth/register.html", form=form)
@@ -70,7 +70,7 @@ def forgot_password():
     if form.validate_on_submit():
         user = User(form.email.data)
         token = create_token("PASSWORD_RESET", user.email)
-        user.send_email("PASSWORD_RESET", token)
+        user.send_password_reset_email(token)
         flash("Check you email for a reset link", "success")
     return render_template("auth/forgot_password.html", form=form)
 
