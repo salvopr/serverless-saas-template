@@ -1,6 +1,11 @@
 from enum import Enum
 from config import current_config
 
+import boto3
+from botocore.exceptions import ClientError
+
+from app.exceptions import EmailProviderError
+
 
 class EmailTemplateNames(Enum):
     REGISTRATION = 'REGISTRATION'
@@ -42,4 +47,21 @@ TEMPLATES = {EmailTemplateNames.REGISTRATION:
 def send_email(email, template, render_params):
     subject = TEMPLATES[template]["subject"].format(current_config.DOMAIN)
     body = TEMPLATES[template]["subject"].format(**render_params)
-    print(email, subject, body)
+    try:
+        client = boto3.client('ses')
+        response = client.send_email(
+            Source=f'notification@{current_config.DOMAIN}',
+            Destination={
+                'ToAddresses': [email]
+            },
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {'Text': {'Data': body},
+                         'Html': {'Data': body}
+                         }
+            }
+        )
+
+    except ClientError as e:
+        raise EmailProviderError(f"Failed to send email to {email}\n{subject}\n{body}") from e
+

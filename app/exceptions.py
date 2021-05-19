@@ -12,3 +12,7 @@ class TokenError(Exception):
 
 class PaymentError(Exception):
     pass
+
+
+class EmailProviderError(Exception):
+    pass
