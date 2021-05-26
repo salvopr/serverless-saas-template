@@ -6,6 +6,7 @@ from app.auth.forms import LoginForm, RegistrationForm, ForgotPasswordForm, Rese
 from app.user import User
 from app.exceptions import UserDoesNotExists
 from app.auth.tokens import create_token, token_user_id
+from app.events import new_event, EventTypes
 
 
 @auth_blueprint.route("/login", methods=["GET", "POST"])
@@ -51,6 +52,7 @@ def register():
         token = create_token("REGISTRATION", user.email)
         user.send_activation_email(token)
         flash("Congratulations, you are now a registered user! Check you email for an activation link", "success")
+        new_event(EventTypes.NEW_USER, user.email)
         return redirect(url_for("auth_blueprint.login"))
     return render_template("auth/register.html", form=form)
 

@@ -16,3 +16,7 @@ class PaymentError(Exception):
 
 class EmailProviderError(Exception):
     pass
+
+
+class EventError(Exception):
+    pass

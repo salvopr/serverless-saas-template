@@ -7,11 +7,13 @@ from flask import url_for
 from config import current_config
 from app.exceptions import UserError, UserDoesNotExists
 from app.email import send_email, EmailTemplateNames
+from app.events import EventTypes, new_event
 
 
 def load_user(user_id):
     user = User(user_id)
     user.load()
+    new_event(EventTypes.ACTIVITY, user.email)
     return user
 
 

@@ -1,53 +1,29 @@
 {% extends "base.html" %}
-{% import "formrenderer.html" as macros %}
-{% block nav %}
-{% endblock %}
+
 {% block container %}
 <div class="jumbotron text-center">
-  <h1>Get notification on your Youtube subscriptions via email</h1>
-    <p>Youtube discontinued email notification in August 2020. With this tool you'll get all new uploads from your subscriptions once a day in your inbox</p>
+  <h1>Welcome to the my Awesome SaaS landing page</h1>
+  <p>You can now
+    <a class="btn btn-success" href="{{url_for('auth.register')}}">Register</a> or
+    <a class="btn btn-primary" href="{{url_for('auth.login')}}">Login</a>
+  </p>
 
 
 </div>
 <div class="container">
   <div class="row justify-content-center">
     <div class="col-sm-4 text-center" >
-      <i class="fa fa-youtube fa-4x"></i>
-
-      <h3>Make your channel subscriptions public</h3>
-      <p>See <a href="https://support.google.com/youtube/answer/7280190?hl=en"> this doc to make them accessible</a></p>
+      <h3>Billing and payments are available once you register</h3>
+      <p>Use there fake credit card for testing: 4242 4242 4242 4242, any date in the future for expiration, any CVV code. The email you provide to Stripe should be the same as the one you've registered with</p>
     </div>
     <div class="col-sm-4 text-center">
-      <i class="fa fa-tv fa-4x"></i>
-
-      <h3>Get your channel id</h3>
-      <p>See <a href="https://support.google.com/youtube/answer/3250431?hl=en"> this doc to get your channel id.</a></p>
+      <h3>To access platform analytics</h3>
+      <p>Use SaaS owner email owner@demo.easysaasboilerplate.com and password Awe$0me</p>
     </div>
     <div class="col-sm-4 text-center">
-      <i class="fa fa-wpforms fa-4x"></i>
-
-      <h3>Fill the form below</h3>
-      <p>Your email to send notifications to and channel id from previous step</p>
+      <h3>Extend this boilerplate</h3>
+      <p>Here is a link to Table of Content of the User Guide for this boilerplate</p>
     </div>
-  </div>
-
-  <br><br>
-  <div class="row justify-content-start">
-    <div class="col-md ">
-      <form method="POST">
-      {{ form.hidden_tag() }}
-        <div class="form-group">
-            <label for="email">{{ form.email.label }}</label>
-            {{  macros.render_field(form.email, class_="form-control") }}
-        </div>
-        <div class="form-group">
-            <label for="channel_id">{{ form.channel_id.label }}</label>
-            {{  macros.render_field(form.channel_id, class_="form-control") }}
-        </div>
-      <input type="submit" value="Add" class="btn btn-primary">
-      </form>
-      </div>
   </div>
 </div>
- <br><br>
 {% endblock %}

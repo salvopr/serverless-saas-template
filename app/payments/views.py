@@ -9,6 +9,8 @@ from config import current_config
 from app.payments.plans import get_prices_from_stripe, TRIAL_DAYS
 from app.user import load_user
 from app.exceptions import PaymentError
+from app.events import EventTypes, new_event
+
 stripe.api_key = current_config.STRIPE_SEC_KEY
 
 
@@ -104,6 +106,7 @@ def webhook_received():
 
     elif event_type == 'invoice.paid':
         user.invoice_paid()
+        new_event(EventTypes.PAYMENT, user.email, values={"amount_paid": data_object["amount_paid"]})
 
     elif event_type == 'invoice.payment_failed':
         user.invoice_payment_failed()
@@ -116,9 +119,11 @@ def webhook_received():
 
     elif event_type == 'customer.subscription.updated' and data_object["status"] in ("past_due", "canceled", "unpaid"):
         user.subscription_invalid(data_object["status"])
-
+        if data_object["status"] == "canceled":
+            new_event(EventTypes.CHURN, user.email)
     elif event_type == 'customer.subscription.deleted':
         user.subscription_deleted()
+        new_event(EventTypes.CHURN, user.email)
     else:
         user.subscription_default_event(event_type)
         print(f'Unhandled event type {event_type}\n{data_object}')
