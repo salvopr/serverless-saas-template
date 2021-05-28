@@ -1,22 +1,4 @@
 {
-    "dev": {
-        "log_level": "INFO",
-        "app_function": "manage.app",
-        "aws_region": "us-east-1",
-        "profile_name": "default",
-        "project_name": "mysaas",
-        "runtime": "python3.8",
-        "s3_bucket": "zappa-mysaas-dev",
-        "remote_env": "s3://mysaas-data/dev-secrets.json",
-        "environment_variables": {
-              "CONFIG": "dev"
-          },
-        "extra_permissions": [{
-            "Effect": "Allow",
-            "Action": ["ses:*"],
-            "Resource": "*"
-        }]
-    },
     "prod": {
         "log_level": "WARNING",
         "app_function": "manage.app",
@@ -25,10 +7,11 @@
         "project_name": "mysaas",
         "runtime": "python3.8",
         "s3_bucket": "zappa-mysaas-prod",
-        "remote_env": "s3://mysaas-data/prod-secrets.json",
+        "remote_env": "s3://mysaas-env/prod-secrets.json",
         "timeout_seconds": 300,
         "environment_variables": {
-              "CONFIG": "prod"
+              "CONFIG": "prod",
+              "AWS_REGION": "us-east-1"
           },
         "extra_permissions": [{
             "Effect": "Allow",

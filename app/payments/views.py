@@ -44,6 +44,7 @@ def create_checkout_session():
         success_url = f"https://{current_config.DOMAIN}{url_for('payments_blueprint.success')}"
         cancel_url = f"https://{current_config.DOMAIN}{url_for('payments_blueprint.cancel')}"
         checkout_session_params = dict(
+            customer_email=current_user.email,
             success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=cancel_url,
             payment_method_types=['card'],

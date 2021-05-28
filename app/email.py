@@ -45,8 +45,8 @@ TEMPLATES = {EmailTemplateNames.REGISTRATION:
 
 
 def send_email(email, template, render_params):
-    subject = TEMPLATES[template]["subject"].format(current_config.DOMAIN)
-    body = TEMPLATES[template]["subject"].format(**render_params)
+    subject = TEMPLATES[template]["subject"].format(domain=current_config.DOMAIN)
+    body = TEMPLATES[template]["body"].format(**render_params)
     try:
         client = boto3.client('ses')
         response = client.send_email(

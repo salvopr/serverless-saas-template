@@ -11,7 +11,6 @@ def get_prices_from_stripe():
     stripe.api_key = current_config.STRIPE_SEC_KEY
     prices = []
     for price in stripe.Price.list():
-        print(price)
         if price['active'] and price['recurring']:
             prices.append({"price_id": price["id"],
                            "product_id": price["product"],

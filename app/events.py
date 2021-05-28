@@ -103,7 +103,7 @@ class MonthlyKPIs:
     def ltv(self):
         if "ltv" not in self.cache:
             mrr_now, count = self.mrr()
-            arpu = mrr_now/count
+            arpu = mrr_now/count if count != 0 else 0
             _churn = self.churn()
             self.cache['ltv'] = arpu/_churn if _churn != 0 else 0
         return self.cache['ltv']

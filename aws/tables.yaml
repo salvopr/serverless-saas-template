@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  Name:
+    Description: this is prefixed to all table names
+    Type: String
+  Env:
+    Description: environment name is a suffix for all tables names
+    Type: String
+Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: "email"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "email"
+          KeyType: "HASH"
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "${Name}-users-${Env}"
+
+  TokensTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "token"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "token"
+          KeyType: "HASH"
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "${Name}-tokens-${Env}"
+
+  EventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "event_type"
+          AttributeType: "S"
+        - AttributeName: "datetime"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "event_type"
+          KeyType: "HASH"
+        - AttributeName: "datetime"
+          KeyType: "RANGE"
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "${Name}-events-${Env}"
