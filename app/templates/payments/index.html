@@ -4,7 +4,7 @@
 
 <h2>Payment console</h2>
 
-<span>Your subscription status is {{current_user.subscription_status}} {{current_user.is_paying}}</span>
+<span>Your subscription status is {{current_user.subscription_status}}</span>
 <br><br>
 {% if not current_user.is_paying %}
   {% for plan in payment_plans %}

@@ -6,6 +6,8 @@ from flask_login import current_user
 def payment_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
+        if current_user.is_admin:
+            return redirect(url_for("admin_blueprint.index"))
         if not current_user.is_paying:
             flash("You don't have active payment plan!", "danger")
             return redirect(url_for("payments_blueprint.index"))

@@ -100,6 +100,13 @@ def user_table():
 
 
 @pytest.fixture
+def events_table():
+    dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
+    table = dynamodb.Table(current_config.EVENT_TABLE)
+    return table
+
+
+@pytest.fixture
 def register_user(email, user_table):
     user_table.put_item(
         Item={"email": email,

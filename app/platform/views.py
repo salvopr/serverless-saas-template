@@ -1,3 +1,4 @@
+from flask import render_template
 from flask_login import login_required
 from . import platform_blueprint
 from app.payments.payment_required import payment_required
@@ -7,4 +8,4 @@ from app.payments.payment_required import payment_required
 @login_required
 @payment_required
 def index():
-    return 'this page is for platform user with active payment plan'
+    return render_template('platform/index.html')

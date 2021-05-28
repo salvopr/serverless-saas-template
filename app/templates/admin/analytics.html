@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" href="{{url_for('admin_blueprint.index')}}">Analytics <span class="sr-only">(current)</span></a>
+      </li>
+    </ul>
+    {% if current_user.is_authenticated %}
+    <span class="navbar nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{current_user.email}}
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <a class="dropdown-item" href="{{url_for('auth_blueprint.logout')}}">Logout</a>
+            </div>
+        </span>
+    {% endif %}
+  </div>
+</nav>
+{% endblock %}
+
+{% block container %}
+<h1>Your KPIs</h1>
+<table class="table table-striped">
+  <thead>
+  <tr>
+    <th>KPI</th>
+    <th>This month</th>
+    <th>Previous month</th>
+  </tr>
+  </thead>
+  <tbody>
+
+  {% for kpi in ["mau", "churn", "ltv"] %}
+  <tr>
+    <td>{{kpi|upper}}</td>
+    <td>{{kpi_this.cache[kpi]}}</td>
+    <td>{{kpi_prev.cache[kpi]}}</td>
+  </tr>
+  {% endfor %}
+  <tr>
+    <td>MRR</td>
+    <td>{{kpi_this.cache['mrr'][0]}}</td>
+    <td>{{kpi_prev.cache['mrr'][0]}}</td>
+  </tr>
+  </tbody>
+</table>
+{% endblock %}

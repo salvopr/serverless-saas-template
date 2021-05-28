@@ -13,6 +13,8 @@
     {% endblock %}
   </head>
   <body>
+    {% block navbar %}
+    {% endblock %}
     {% for category, message in get_flashed_messages(with_categories=True) %}
     <div class="alert alert-{{category if category else 'warning'}}" role="alert">
       {{ message }}

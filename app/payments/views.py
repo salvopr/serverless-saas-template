@@ -107,6 +107,7 @@ def webhook_received():
     elif event_type == 'invoice.paid':
         user.invoice_paid()
         new_event(EventTypes.PAYMENT, user.email, values={"amount_paid": data_object["amount_paid"]})
+        # TODO generate 12 monthly payments if period is year!
 
     elif event_type == 'invoice.payment_failed':
         user.invoice_payment_failed()

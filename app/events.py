@@ -4,7 +4,7 @@ import calendar
 
 import boto3
 from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 from dateutil.relativedelta import relativedelta
 
 from app.exceptions import EventError
@@ -32,79 +32,85 @@ def new_event(event_type, user, values=None, date_time=None):
         raise EventError("cannot save event " + e.response['Error']['Message']) from e
 
 
-def get_monthly_events(event_type, year, month):
-    month_start = datetime(year, month, 1)
-    month_end = datetime(year, month, calendar.monthrange(year, month)[1])
-    try:
+class MonthlyKPIs:
+    def __init__(self, month_end):
+        self.month_end = month_end
         dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
-        table = dynamodb.Table(current_config.EVENT_TABLE)
-        condition = {"KeyConditionExpression": Key('event_type').eq(event_type) & Key('datetime').between(str(month_start), str(month_end))}
-        r = table.query(**condition)
-        data = r['Items']
-        while "LastEvaluatedKey" in r:
-            condition["ExclusiveStartKey"] = r['LastEvaluatedKey']
+        self.users_table = dynamodb.Table(current_config.USERS_TABLE)
+        self.events_table = dynamodb.Table(current_config.EVENT_TABLE)
+        self.cache = {}
+
+    def get_monthly_events(self, event_type):
+        month_start = self.month_end - relativedelta(months=1)
+        try:
+            dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
+            table = dynamodb.Table(current_config.EVENT_TABLE)
+            condition = {"KeyConditionExpression": Key('event_type').eq(event_type) & Key('datetime').between(str(month_start), str(self.month_end))}
             r = table.query(**condition)
-            data.extend(r['Items'])
-        return data
-    except ClientError as e:
-        raise EventError("cannot get events " + e.response['Error']['Message']) from e
+            data = r['Items']
+            while "LastEvaluatedKey" in r:
+                condition["ExclusiveStartKey"] = r['LastEvaluatedKey']
+                r = table.query(**condition)
+                data.extend(r['Items'])
+            return data
+        except ClientError as e:
+            raise EventError("cannot get events " + e.response['Error']['Message']) from e
 
+    def _user_event_counter(self, event):
+        data = self.get_monthly_events(event)
+        user_set = set()
+        for d in data:
+            user_set.add(d['user'])
+        return len(user_set)
 
-def paying_user_count_now():
-    # this is a slow scan - think of adding a GSI to DynamoDB
-    dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
-    table = dynamodb.Table(current_config.USERS_TABLE)
-    r = table.scan()
-    counter = len(r['Items'])
-    while 'LastEvaluatedKey' in r:
-        r = table.scan(ExclusiveStartKey=r['LastEvaluatedKey'])
-        counter += len(r['Items'])
-    return table.item_count
+    def mau(self):
+        if 'mau' not in self.cache:
+            self.cache['mau'] = self._user_event_counter(EventTypes.ACTIVITY)
+        return self.cache['mau']
 
+    def new_users(self):
+        if 'new_users' not in self.cache:
+            self.cache['new_users'] = self._user_event_counter(EventTypes.NEW_USER)
+        return self.cache['new_users']
 
-def _user_event_counter(year, month, event):
-    data = get_monthly_events(event, year, month)
-    user_set = set()
-    for d in data:
-        user_set.add(d['user'])
-    return len(user_set)
+    def churned_users(self):
+        if 'churned_users' not in self.cache:
+            self.cache['churned_users'] = self._user_event_counter(EventTypes.CHURN)
+        return self.cache['churned_users']
 
+    def mrr(self):
+        if 'mrr' not in self.cache:
+            data = self.get_monthly_events(EventTypes.PAYMENT)
+            revenue = 0
+            count = 0
+            for d in data:
+                revenue += float(d['amount_paid'])
+                count += 1
+            self.cache['mrr'] = (revenue/100, count)
+        return self.cache['mrr']  # amount_paid is in cents so divide by 100
 
-def mau(year, month):
-    return _user_event_counter(year, month, EventTypes.ACTIVITY)
+    def churn(self):
+        if "churn" not in self.cache:
+            new_users_this_month = self.new_users()
+            revenue, payment_count = self.mrr()
+            total_paying_users_this_month = payment_count
+            total_users_previous_month = total_paying_users_this_month - new_users_this_month
+            churned_users_this_month = self.churned_users()
+            non_churned_users_this_month = total_paying_users_this_month - churned_users_this_month
+            self.cache['churn'] = 1 - (non_churned_users_this_month/total_users_previous_month) if total_users_previous_month else 0
+        return self.cache['churn']
 
+    def ltv(self):
+        if "ltv" not in self.cache:
+            mrr_now, count = self.mrr()
+            arpu = mrr_now/count
+            _churn = self.churn()
+            self.cache['ltv'] = arpu/_churn if _churn != 0 else 0
+        return self.cache['ltv']
 
-def new_users_a_month(year, month):
-    return _user_event_counter(year, month, EventTypes.NEW_USER)
-
-
-def churned_users_a_month(year, month):
-    return _user_event_counter(year, month, EventTypes.CHURN)
-
-
-def churn(year, month):
-    new_users_this_month = new_users_a_month(year, month)
-    total_paying_users_this_month = paying_user_count_now()
-    total_users_previous_month = total_paying_users_this_month - new_users_this_month
-    churned_users_this_month = churned_users_a_month(year, month)
-    non_churned_users_this_month = total_paying_users_this_month - churned_users_this_month
-    return 1 - (non_churned_users_this_month/total_users_previous_month) if total_users_previous_month else 0
-
-
-def arpu(year, month):
-    data = get_monthly_events(EventTypes.PAYMENT, year, month)
-    revenue = 0
-    count = 0
-    for d in data:
-        revenue += d['amount_paid']
-        count += 1
-    return revenue / (100 * count)  # amount_paid is in cents so divide by 100
-
-
-def ltv(year, month):
-    return arpu(year, month)/churn(year, month)
-
-
-
-
+    def analyze(self):
+        self.mau()
+        self.mrr()
+        self.ltv()
+        self.churn()
 
