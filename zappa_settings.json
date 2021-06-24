@@ -1,4 +1,24 @@
 {
+    "test": {
+        "log_level": "WARNING",
+        "app_function": "manage.app",
+        "aws_region": "us-east-1",
+        "profile_name": "default",
+        "project_name": "mysaas",
+        "runtime": "python3.8",
+        "s3_bucket": "zappa-mysaas-test",
+        "remote_env": "s3://mysaas-env/test-secrets.json",
+        "timeout_seconds": 300,
+        "environment_variables": {
+            "CONFIG": "test",
+            "AWS_REGION": "us-east-1"
+        },
+        "extra_permissions": [{
+            "Effect": "Allow",
+            "Action": ["ses:*"],
+            "Resource": "*"
+        }]
+    },
     "prod": {
         "log_level": "WARNING",
         "app_function": "manage.app",
