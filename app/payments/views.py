@@ -1,7 +1,7 @@
 import json
 
 import stripe
-from flask import request, jsonify, redirect, url_for, flash, render_template
+from flask import request, jsonify, redirect, url_for, flash, render_template, current_app
 from flask_login import login_required, current_user
 
 from . import payments_blueprint
@@ -24,6 +24,7 @@ def index():
 @payments_blueprint.route('/success', methods=["GET"])
 @login_required
 def success():
+    # TODO test me
     flash("Payment succeeded! Provisioning subscription.", "success")
     return redirect(url_for("payments_blueprint.index"))
 
@@ -31,6 +32,7 @@ def success():
 @payments_blueprint.route('/cancel', methods=["GET"])
 @login_required
 def cancel():
+    # TODO test me
     flash("Payment canceled!", "warning")
     return redirect(url_for("payments_blueprint.index"))
 
@@ -39,7 +41,6 @@ def cancel():
 @login_required
 def create_checkout_session():
     data = json.loads(request.data)
-
     try:
         success_url = f"https://{current_config.DOMAIN}{url_for('payments_blueprint.success')}"
         cancel_url = f"https://{current_config.DOMAIN}{url_for('payments_blueprint.cancel')}"
@@ -57,9 +58,10 @@ def create_checkout_session():
         if TRIAL_DAYS >= 1:
             checkout_session_params["subscription_data"] = {"trial_period_days": TRIAL_DAYS}
         checkout_session = stripe.checkout.Session.create(**checkout_session_params)
+        current_app.logger.info(f'New Stripe payment session {checkout_session["id"]}')
         return jsonify({'sessionId': checkout_session['id']})
     except Exception as e:
-        raise PaymentError("cannot create checkout session") from e
+        raise PaymentError(f"cannot create checkout session - {e}") from e
 
 
 def webhook_data(webhook_request_data):
@@ -101,6 +103,7 @@ def find_webhook_user(data_object):
 def webhook_received():
     event_type, data_object = webhook_data(request)
     user = find_webhook_user(data_object)
+    current_app.logger.info(f'New Stripe event {event_type} for user {user.email}')
 
     if event_type == 'checkout.session.completed':
         user.checkout_completed(data_object['customer'])
@@ -108,7 +111,6 @@ def webhook_received():
     elif event_type == 'invoice.paid':
         user.invoice_paid()
         new_event(EventTypes.PAYMENT, user.email, values={"amount_paid": data_object["amount_paid"]})
-        # TODO generate 12 monthly payments if period is year!
 
     elif event_type == 'invoice.payment_failed':
         user.invoice_payment_failed()
@@ -127,8 +129,9 @@ def webhook_received():
         user.subscription_deleted()
         new_event(EventTypes.CHURN, user.email)
     else:
+        # TODO test me
         user.subscription_default_event(event_type)
-        print(f'Unhandled event type {event_type}\n{data_object}')
+        current_app.logger.warning(f'Unhandled event type {event_type}\n{data_object}')
 
     return jsonify({'status': 'success'})
 
@@ -139,4 +142,5 @@ def customer_portal():
     session = stripe.billing_portal.Session.create(
         customer=current_user.stripe_customer_id,
         return_url=f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}")
+    current_app.logger.info(f'New customer portal session started {session.url}')
     return jsonify({'url': session.url})

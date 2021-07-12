@@ -33,6 +33,7 @@ def test_invoice_paid(client, email, user_table):
                          "data": {
                              "object": {
                                  'customer_email': email,
+                                 'amount_paid': 123,
                              }
                          }
                          }))
@@ -121,4 +122,25 @@ def test_subscription_updated(client, email, user_table):
     response = user_table.get_item(Key={'email': email})
     user_data = response['Item']
     assert user_data["subscription_status"] == 'canceled'
+    assert not user_data["is_paying"]
+
+
+@pytest.mark.usefixtures("register_user")
+def test_subscription_deleted(client, email, user_table):
+    current_config.STRIPE_ENDPOINT_KEY = None
+    r = client.post("payments/webhook",
+                    data=json.dumps(
+                        {"type": "customer.subscription.deleted",
+                         "data": {
+                             "object": {
+                                 'customer': "customer_id_123",
+                                 'status': 'canceled'
+                             }
+                         }
+                         }))
+
+    assert r.json['status'] == 'success'
+    response = user_table.get_item(Key={'email': email})
+    user_data = response['Item']
+    assert user_data["subscription_status"] == 'deleted'
     assert not user_data["is_paying"]

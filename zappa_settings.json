@@ -1,6 +1,6 @@
 {
     "test": {
-        "log_level": "WARNING",
+        "log_level": "INFO",
         "app_function": "manage.app",
         "aws_region": "us-east-1",
         "profile_name": "default",
@@ -20,7 +20,7 @@
         }]
     },
     "prod": {
-        "log_level": "WARNING",
+        "log_level": "INFO",
         "app_function": "manage.app",
         "aws_region": "us-east-1",
         "profile_name": "default",

@@ -16,6 +16,8 @@ def test_register_activate_login(client, email, email_user_service):
                       "password": "123"},
                 follow_redirects=True)
     assert current_user.email == email
+    r = client.get("auth/logout", follow_redirects=True)
+    assert b"been logged out" in r.data
 
 
 def test_password_reset_login(client, email, email_user_service):

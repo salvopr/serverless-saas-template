@@ -1,11 +1,28 @@
 import traceback
+from logging.config import dictConfig
 
-from flask import Flask, render_template
+from flask import Flask, render_template, current_app
 from flask_login import LoginManager
 
 from config import current_config
 from app.user import load_user
-from app.exceptions import TokenError, UserError, PaymentError
+from app.exceptions import TokenError, UserError, PaymentError, EmailProviderError
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://flask.logging.wsgi_errors_stream',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
 
 
 def create_app():
@@ -35,10 +52,11 @@ def create_app():
     app.register_error_handler(TokenError, error_handler)
     app.register_error_handler(UserError, error_handler)
     app.register_error_handler(PaymentError, error_handler)
+    app.register_error_handler(EmailProviderError, error_handler)
     return app
 
 
 def error_handler(e):
-    print(f"Application exception {e}")
+    current_app.logger.error(f"Handling application exception: {e}")
     traceback.print_tb(e.__traceback__)
     return render_template("msg.html", msg=str(e))
