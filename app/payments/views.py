@@ -17,6 +17,7 @@ stripe.api_key = current_config.STRIPE_SEC_KEY
 @payments_blueprint.route('/', methods=["GET"])
 @login_required
 def index():
+    """ Serves a page for payment management """
     payment_plans = get_prices_from_stripe()
     return render_template('payments/index.html', payment_plans=payment_plans)
 
@@ -24,6 +25,7 @@ def index():
 @payments_blueprint.route('/success', methods=["GET"])
 @login_required
 def success():
+    """ Users are redirected to this page after successful purchase """
     # TODO test me
     flash("Payment succeeded! Provisioning subscription.", "success")
     return redirect(url_for("payments_blueprint.index"))
@@ -32,6 +34,7 @@ def success():
 @payments_blueprint.route('/cancel', methods=["GET"])
 @login_required
 def cancel():
+    """ Users are redirected to this page after cancelled purchase """
     # TODO test me
     flash("Payment canceled!", "warning")
     return redirect(url_for("payments_blueprint.index"))
@@ -40,6 +43,8 @@ def cancel():
 @payments_blueprint.route('/create-checkout-session', methods=['POST'])
 @login_required
 def create_checkout_session():
+    """ AJAX called when a users initiates payment.
+    Returns a URL for Stripe Checkout """
     data = json.loads(request.data)
     try:
         success_url = f"https://{current_config.DOMAIN}{url_for('payments_blueprint.success')}"
@@ -65,6 +70,7 @@ def create_checkout_session():
 
 
 def webhook_data(webhook_request_data):
+    """ Decrypts a webhook data received from Stripe """
     webhook_secret = current_config.STRIPE_ENDPOINT_KEY
 
     if webhook_secret:
@@ -89,6 +95,7 @@ def webhook_data(webhook_request_data):
 
 
 def find_webhook_user(data_object):
+    """ Extracts user information from a webhook data """
     if 'customer_email' in data_object:  # checkout session or invoice events
         email = data_object['customer_email']
     else:  # applied to subscription data object that has only customer ID
@@ -101,6 +108,7 @@ def find_webhook_user(data_object):
 
 @payments_blueprint.route('/webhook', methods=['POST'])
 def webhook_received():
+    """ Process async webhook events sent by Stripe """
     event_type, data_object = webhook_data(request)
     user = find_webhook_user(data_object)
     current_app.logger.info(f'New Stripe event {event_type} for user {user.email}')
@@ -139,6 +147,8 @@ def webhook_received():
 @payments_blueprint.route('/customer-portal', methods=['POST'])
 @login_required
 def customer_portal():
+    """ When a user wants to manage thier subscriptions and AJAX call
+    return a Stripe URL to do that """
     session = stripe.billing_portal.Session.create(
         customer=current_user.stripe_customer_id,
         return_url=f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}")

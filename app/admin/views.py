@@ -11,6 +11,7 @@ from app.events import MonthlyKPIs
 @login_required
 @admin_required
 def index():
+    """ Serve a page with the metrics """
     date_now = datetime.utcnow()
     kpi_this = MonthlyKPIs(date_now)
     kpi_prev = MonthlyKPIs(date_now - relativedelta(months=1))

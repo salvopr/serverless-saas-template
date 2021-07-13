@@ -8,12 +8,14 @@ from config import current_config
 
 
 def token_table():
+    """ Initialize a boto dynamo table containing tokens """
     dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
     table = dynamodb.Table(current_config.AUTH_TOKENS_TABLE)
     return table
 
 
 def create_token(token_type, user_id):
+    """ Puts a token for a specific user in DynamoDB tokens table"""
     table = token_table()
     token = str(uuid4())
     try:
@@ -28,6 +30,9 @@ def create_token(token_type, user_id):
 
 
 def token_user_id(token, token_type):
+    """ returns users_id (email) for a given token
+        checks token type validity
+    """
     table = token_table()
     try:
         response = table.get_item(Key={"token": token})

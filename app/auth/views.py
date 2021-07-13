@@ -11,6 +11,10 @@ from app.events import new_event, EventTypes
 
 @auth_blueprint.route("/login", methods=["GET", "POST"])
 def login():
+    """ Serves a login page
+        Validates a login form sent with POST request
+        Performs auth for a user
+    """
     if current_user.is_authenticated:
         return redirect(url_for("platform_blueprint.index"))
     form = LoginForm()
@@ -40,6 +44,7 @@ def login():
 
 @auth_blueprint.route("/logout", methods=["GET", "POST"])
 def logout():
+    """ Logs a user out of the system """
     logout_user()
     flash("You've been logged out", "success")
     return redirect(url_for("auth_blueprint.login"))
@@ -47,6 +52,10 @@ def logout():
 
 @auth_blueprint.route("/register", methods=["GET", "POST"])
 def register():
+    """ Serves a registration page
+        Validates a registration form
+        Created a new user in DynamoDB users table
+    """
     if current_user.is_authenticated:
         return redirect(url_for("auth_blueprint.login"))
     form = RegistrationForm()
@@ -64,6 +73,7 @@ def register():
 
 @auth_blueprint.route("/activate/<token>", methods=["GET"])
 def activate(token):
+    """ Users get this link via registration email """
     email = token_user_id(token, "REGISTRATION")
     user = User(email)
     user.activate()
@@ -74,6 +84,7 @@ def activate(token):
 
 @auth_blueprint.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():
+    """ Serves a forgot password form """
     form = ForgotPasswordForm()
     if form.validate_on_submit():
         user = User(form.email.data)
@@ -86,6 +97,9 @@ def forgot_password():
 
 @auth_blueprint.route("/password_reset/<token>", methods=["GET", "POST"])
 def password_reset(token):
+    """ Users get this link via forgot-password email
+        Serves a form for a password reset
+    """
     form = ResetPasswordForm()
     if form.validate_on_submit():
         email = token_user_id(token, "PASSWORD_RESET")

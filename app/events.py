@@ -11,6 +11,7 @@ from config import current_config
 
 
 class EventTypes(str, Enum):
+    """ Types of user generated events """
     PAYMENT = 'PAYMENT'
     ACTIVITY = 'ACTIVITY'
     NEW_USER = 'NEW_USER'
@@ -18,6 +19,7 @@ class EventTypes(str, Enum):
 
 
 def new_event(event_type, user, values=None, date_time=None):
+    """ Saves a new event in DynamoDB events table """
     try:
         dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
         table = dynamodb.Table(current_config.EVENT_TABLE)
@@ -32,6 +34,7 @@ def new_event(event_type, user, values=None, date_time=None):
 
 
 class MonthlyKPIs:
+    """ Calcualtes metrics based on user generated events """
     def __init__(self, month_end):
         self.month_end = month_end
         dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
@@ -40,6 +43,7 @@ class MonthlyKPIs:
         self.cache = {}
 
     def get_monthly_events(self, event_type):
+        """ Pull all the events in the last month from DynamoDB eventa table """
         month_start = self.month_end - relativedelta(months=1)
         try:
             dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
@@ -56,6 +60,8 @@ class MonthlyKPIs:
             raise EventError("cannot get events " + e.response['Error']['Message']) from e
 
     def _user_event_counter(self, event):
+        """ Returns a count of unique users for a
+        particular event type for the lat month """
         data = self.get_monthly_events(event)
         user_set = set()
         for d in data:
@@ -63,21 +69,25 @@ class MonthlyKPIs:
         return len(user_set)
 
     def mau(self):
+        """ Calculates monthly active users metric """
         if 'mau' not in self.cache:
             self.cache['mau'] = self._user_event_counter(EventTypes.ACTIVITY)
         return self.cache['mau']
 
     def new_users(self):
+        """ Calculates new users in the last month """
         if 'new_users' not in self.cache:
             self.cache['new_users'] = self._user_event_counter(EventTypes.NEW_USER)
         return self.cache['new_users']
 
     def churned_users(self):
+        """ Calculates how many users left in the last month """
         if 'churned_users' not in self.cache:
             self.cache['churned_users'] = self._user_event_counter(EventTypes.CHURN)
         return self.cache['churned_users']
 
     def mrr(self):
+        """ Calculates monthly recurrent revenue """
         if 'mrr' not in self.cache:
             data = self.get_monthly_events(EventTypes.PAYMENT)
             revenue = 0
@@ -89,6 +99,7 @@ class MonthlyKPIs:
         return self.cache['mrr']  # amount_paid is in cents so divide by 100
 
     def churn(self):
+        """ Calculates churn percentage """
         if "churn" not in self.cache:
             new_users_this_month = self.new_users()
             revenue, payment_count = self.mrr()
@@ -100,6 +111,7 @@ class MonthlyKPIs:
         return self.cache['churn']
 
     def ltv(self):
+        """ Calculates life-time-value for a user """
         if "ltv" not in self.cache:
             mrr_now, count = self.mrr()
             arpu = mrr_now / count if count != 0 else 0

@@ -11,6 +11,7 @@ from app.events import EventTypes, new_event
 
 
 def load_user(user_id):
+    """ Constructs a user object by email """
     user = User(user_id)
     user.load()
     new_event(EventTypes.ACTIVITY, user.email)
@@ -18,6 +19,7 @@ def load_user(user_id):
 
 
 def decrypt(token):
+    """ decrypts a password stored in DB """
     try:
         f = Fernet(current_config.SECRET_KEY)
         return f.decrypt(token.encode('ascii'))
@@ -38,6 +40,7 @@ class User:
         self.table = dynamodb.Table(current_config.USERS_TABLE)
 
     def exists(self):
+        """ Check is a user exists in DynamoDB users table """
         try:
             response = self.table.get_item(Key={'email': self.email})
             if 'Item' in response:
@@ -47,6 +50,7 @@ class User:
         return False
 
     def load(self):
+        """ Loads user data from DynamoDB users table """
         try:
             response = self.table.get_item(Key={'email': self.email})
             user_data = response['Item']
@@ -62,6 +66,7 @@ class User:
             raise UserDoesNotExists(f"User does not exists {self.email}") from e
 
     def authenticate(self, password):
+        """ Checks user's password """
         if self.password_token:
             return password == decrypt(self.password_token).decode('ascii')
         else:
@@ -83,9 +88,11 @@ class User:
         return self.email
 
     def activate(self):
+        """ Flips activated field for a user to True"""
         self._update("activated", True)
 
     def register(self, password):
+        """ Stores a new user in DynamoDB users table"""
         try:
             f = Fernet(current_config.SECRET_KEY)
             token = f.encrypt(password.encode("ascii")).decode('ascii')
@@ -99,6 +106,7 @@ class User:
             raise UserError("Cannot register user password " + e.response['Error']['Message']) from e
 
     def reset_password(self, password):
+        """ Puts new password for a user in DynamoDB users table """
         try:
             f = Fernet(current_config.SECRET_KEY)
             token = f.encrypt(password.encode("ascii")).decode('ascii')
@@ -107,6 +115,7 @@ class User:
             raise UserError("Cannot reset user password " + e.response['Error']['Message']) from e
 
     def send_password_reset_email(self, token):
+        """ Sends an email with password reset instructions """
         url = f"https://{current_config.DOMAIN}{url_for('auth_blueprint.password_reset', token=token)}"
         send_email(self.email, EmailTemplateNames.PASSWORD_RESET,
                    render_params={
@@ -114,6 +123,7 @@ class User:
                    })
 
     def send_activation_email(self, token):
+        """ Sends an email with activation instructions """
         url = f"https://{current_config.DOMAIN}{url_for('auth_blueprint.activate', token=token)}"
         send_email(self.email, EmailTemplateNames.REGISTRATION,
                    render_params={
@@ -121,6 +131,7 @@ class User:
                    })
 
     def _update(self, param, value):
+        """ Updates a field in database and in the object attributes """
         try:
             self.table.update_item(
                 Key={
@@ -137,15 +148,18 @@ class User:
             raise UserError("Cannot update user data from DB " + e.response['Error']['Message']) from e
 
     def checkout_completed(self, stripe_customer_id):
+        """ Process an event of completing a payment with Stripe """
         self._update("subscription_status", "checkout_completed")
         self._update("is_paying", True)
         self._update("stripe_customer_id", stripe_customer_id)
 
     def invoice_paid(self):
+        """ Process an event of getting new invoice paid with Stripe """
         self._update("subscription_status", "invoice_paid")
         self._update("is_paying", True)
 
     def invoice_payment_failed(self):
+        """ Process an event of failed payment with Stripe """
         self._update("subscription_status", "invoice_payment_failed")
         self._update("is_paying", False)
         send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
@@ -155,6 +169,7 @@ class User:
                    })
 
     def payment_action_required(self):
+        """ Notify a user when something needs to be done manually to continue with payment """
         self._update("subscription_status", "payment_action_required")
         self._update("is_paying", False)
         send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
@@ -164,12 +179,14 @@ class User:
                    })
 
     def trial_end(self):
+        """ Notify a user when a trial ends """
         send_email(self.email, EmailTemplateNames.TRIAL_END,
                    render_params={
                        "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
                    })
 
     def subscription_invalid(self, status):
+        """ Process an event when subscription has invalid status """
         self._update("subscription_status", status)
         self._update("is_paying", False)
         send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
@@ -179,6 +196,7 @@ class User:
                    })
 
     def subscription_deleted(self):
+        """ Process an event of deleting a subscription in Stripe """
         self._update("subscription_status", "deleted")
         self._update("is_paying", False)
         send_email(self.email, EmailTemplateNames.SUBSCRIPTION_DELETED,
@@ -187,4 +205,5 @@ class User:
                    })
 
     def subscription_default_event(self, status):
+        """ Process an unknown event from Stripe """
         self._update("subscription_status", status)

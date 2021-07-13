@@ -8,6 +8,7 @@ from app.exceptions import EmailProviderError
 
 
 class EmailTemplateNames(Enum):
+    """ Types of emails """
     REGISTRATION = 'REGISTRATION'
     PASSWORD_RESET = "PASSWORD_RESET"
     PAYMENT_PROBLEM = "PAYMENT_PROBLEM"
@@ -15,6 +16,7 @@ class EmailTemplateNames(Enum):
     SUBSCRIPTION_DELETED = "SUBSCRIPTION_DELETED"
 
 
+# A dict with email templates
 TEMPLATES = {EmailTemplateNames.REGISTRATION: {"subject": "Successful registration at {domain}",
                                                "body": ("You have been registered. "
                                                         "Follow this link to activate your account {url}")},
@@ -43,6 +45,7 @@ TEMPLATES = {EmailTemplateNames.REGISTRATION: {"subject": "Successful registrati
 
 
 def send_email(email, template, render_params):
+    """ Prepares an email to be sent via AWS SES """
     subject = TEMPLATES[template]["subject"].format(domain=current_config.DOMAIN)
     body = TEMPLATES[template]["body"].format(**render_params)
     try:

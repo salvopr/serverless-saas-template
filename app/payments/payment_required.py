@@ -4,6 +4,8 @@ from flask_login import current_user
 
 
 def payment_required(f):
+    """ Decorate view that require your users to have
+    active subscription with this decorator """
     @wraps(f)
     def wrapper(*args, **kwargs):
         if current_user.is_admin:

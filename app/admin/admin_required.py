@@ -4,6 +4,7 @@ from flask_login import current_user
 
 
 def admin_required(f):
+    """ Decorator that protects views available only to platform owner """
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not (current_user.is_authenticated and current_user.is_admin):

@@ -7,6 +7,7 @@ TRIAL_DAYS = 7
 
 @ttl_cache(ttl=600)
 def get_prices_from_stripe():
+    """ Pulls subscription data from Stripe """
     # Only 1-year and 1-month intervals are supported
     stripe.api_key = current_config.STRIPE_SEC_KEY
     prices = []
