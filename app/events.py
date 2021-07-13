@@ -1,10 +1,9 @@
 from enum import Enum
 from datetime import datetime
-import calendar
 
 import boto3
 from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Key
 from dateutil.relativedelta import relativedelta
 
 from app.exceptions import EventError
@@ -86,7 +85,7 @@ class MonthlyKPIs:
             for d in data:
                 revenue += float(d['amount_paid'])
                 count += 1
-            self.cache['mrr'] = (revenue/100, count)
+            self.cache['mrr'] = (revenue / 100, count)
         return self.cache['mrr']  # amount_paid is in cents so divide by 100
 
     def churn(self):
@@ -97,15 +96,15 @@ class MonthlyKPIs:
             total_users_previous_month = total_paying_users_this_month - new_users_this_month
             churned_users_this_month = self.churned_users()
             non_churned_users_this_month = total_paying_users_this_month - churned_users_this_month
-            self.cache['churn'] = 1 - (non_churned_users_this_month/total_users_previous_month) if total_users_previous_month else 0
+            self.cache['churn'] = 1 - (non_churned_users_this_month / total_users_previous_month) if total_users_previous_month else 0
         return self.cache['churn']
 
     def ltv(self):
         if "ltv" not in self.cache:
             mrr_now, count = self.mrr()
-            arpu = mrr_now/count if count != 0 else 0
+            arpu = mrr_now / count if count != 0 else 0
             _churn = self.churn()
-            self.cache['ltv'] = arpu/_churn if _churn != 0 else 0
+            self.cache['ltv'] = arpu / _churn if _churn != 0 else 0
         return self.cache['ltv']
 
     def analyze(self):
@@ -113,4 +112,3 @@ class MonthlyKPIs:
         self.mrr()
         self.ltv()
         self.churn()
-

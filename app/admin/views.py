@@ -13,7 +13,7 @@ from app.events import MonthlyKPIs
 def index():
     date_now = datetime.utcnow()
     kpi_this = MonthlyKPIs(date_now)
-    kpi_prev = MonthlyKPIs(date_now-relativedelta(months=1))
+    kpi_prev = MonthlyKPIs(date_now - relativedelta(months=1))
     kpi_prev.analyze()
     kpi_this.analyze()
     return render_template('admin/analytics.html', kpi_this=kpi_this, kpi_prev=kpi_prev)

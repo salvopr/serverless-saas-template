@@ -59,7 +59,7 @@ class User:
         except ClientError as e:
             raise UserError("Cannot load user data from DB " + e.response['Error']['Message']) from e
         except KeyError as e:
-            raise UserDoesNotExists(f"User does not exists") from e
+            raise UserDoesNotExists(f"User does not exists {self.email}") from e
 
     def authenticate(self, password):
         if self.password_token:
@@ -188,4 +188,3 @@ class User:
 
     def subscription_default_event(self, status):
         self._update("subscription_status", status)
-
