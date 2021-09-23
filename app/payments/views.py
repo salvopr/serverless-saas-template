@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from . import payments_blueprint
 from config import current_config
 from app.payments.plans import get_prices_from_stripe, TRIAL_DAYS
-from app.user import load_user
+from app.user import User
 from app.exceptions import PaymentError
 from app.events import EventTypes, new_event
 
@@ -102,7 +102,7 @@ def find_webhook_user(data_object):
         customer = stripe.Customer.retrieve(data_object["customer"])
         email = customer['email']
 
-    user = load_user(email)
+    user = User.load(email)
     return user
 
 

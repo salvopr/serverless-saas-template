@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, current_app
+from flask import render_template, redirect, url_for, flash, current_app, request
 from flask_login import current_user, login_user, logout_user
 
 from . import auth_blueprint
@@ -21,8 +21,7 @@ def login():
     if form.validate_on_submit():
         user = None
         try:
-            user = User(form.email.data)
-            user.load()
+            user = User.load(form.email.data)
             if not user.activated:
                 flash("User is not activated yet! Check email for an activation link", "danger")
                 current_app.logger.warning(f'User {form.email.data} not activated')
@@ -38,6 +37,8 @@ def login():
             return redirect(url_for("auth_blueprint.login"))
         login_user(user, remember=form.remember_me.data)
         current_app.logger.info(f'Login for {user.email}')
+        if request.args.get('next'):
+            return redirect(request.args.get('next'))
         return redirect(url_for("platform_blueprint.index"))
     return render_template("auth/login.html", form=form)
 
@@ -103,8 +104,7 @@ def password_reset(token):
     form = ResetPasswordForm()
     if form.validate_on_submit():
         email = token_user_id(token, "PASSWORD_RESET")
-        user = User(email)
-        user.load()
+        user = User.load(email)
         user.reset_password(form.password.data)
         flash("Password updated!", "success")
         current_app.logger.info(f'Password updated for {user.email}')

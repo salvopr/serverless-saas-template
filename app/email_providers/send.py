@@ -4,7 +4,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from app.exceptions import EmailProviderError
-from app.email.templates import TEMPLATES
+from app.email_providers.templates import TEMPLATES
 
 
 def send_email(user, template, render_params):

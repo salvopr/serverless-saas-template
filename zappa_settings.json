@@ -9,6 +9,7 @@
         "s3_bucket": "zappa-mysaas-test",
         "remote_env": "s3://mysaas-env/test-secrets.json",
         "timeout_seconds": 300,
+        "lambda_description": "aws:states:opt-out",
         "environment_variables": {
             "CONFIG": "test",
             "AWS_REGION": "us-east-1"
@@ -29,6 +30,7 @@
         "s3_bucket": "zappa-mysaas-prod",
         "remote_env": "s3://mysaas-env/prod-secrets.json",
         "timeout_seconds": 300,
+        "lambda_description": "aws:states:opt-out",
         "environment_variables": {
               "CONFIG": "prod",
               "AWS_REGION": "us-east-1"

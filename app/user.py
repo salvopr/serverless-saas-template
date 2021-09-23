@@ -6,16 +6,9 @@ from flask import url_for
 
 from config import current_config
 from app.exceptions import UserError, UserDoesNotExists
-from app.email import send_email, EmailTemplateNames
+from app.email_providers.send import send_email
+from app.email_providers.templates import EmailTemplateNames
 from app.events import EventTypes, new_event
-
-
-def load_user(user_id):
-    """ Constructs a user object by email """
-    user = User(user_id)
-    user.load()
-    new_event(EventTypes.ACTIVITY, user.email)
-    return user
 
 
 def decrypt(token):
@@ -36,8 +29,17 @@ class User:
         self.is_paying = False
         self.subscription_status = None
         self.stripe_customer_id = None
+        self.unsubscribed = None
         dynamodb = boto3.resource('dynamodb', region_name=current_config.AWS_REGION)
         self.table = dynamodb.Table(current_config.USERS_TABLE)
+
+    @classmethod
+    def load(cls, user_id):
+        """ Constructs a user object by email """
+        user = cls(user_id)
+        user._load_from_db()
+        new_event(EventTypes.ACTIVITY, user.email)
+        return user
 
     def exists(self):
         """ Check is a user exists in DynamoDB users table """
@@ -49,7 +51,7 @@ class User:
             pass
         return False
 
-    def load(self):
+    def _load_from_db(self):
         """ Loads user data from DynamoDB users table """
         try:
             response = self.table.get_item(Key={'email': self.email})
@@ -60,6 +62,7 @@ class User:
             self.is_paying = bool(user_data.get("is_paying", False))
             self.stripe_customer_id = user_data.get("stripe_customer_id")
             self.subscription_status = user_data.get("subscription_status", "Not started")
+            self.unsubscribed = user_data.get("unsubscribed")
         except ClientError as e:
             raise UserError("Cannot load user data from DB " + e.response['Error']['Message']) from e
         except KeyError as e:
@@ -91,6 +94,10 @@ class User:
         """ Flips activated field for a user to True"""
         self._update("activated", True)
 
+    def unsubscribe(self, reason):
+        """ Flips activated field for a user to True"""
+        self._update("unsubscribed", reason)
+
     def register(self, password):
         """ Stores a new user in DynamoDB users table"""
         try:
@@ -117,7 +124,7 @@ class User:
     def send_password_reset_email(self, token):
         """ Sends an email with password reset instructions """
         url = f"https://{current_config.DOMAIN}{url_for('auth_blueprint.password_reset', token=token)}"
-        send_email(self.email, EmailTemplateNames.PASSWORD_RESET,
+        send_email(self, EmailTemplateNames.PASSWORD_RESET,
                    render_params={
                        "url": url
                    })
@@ -125,7 +132,7 @@ class User:
     def send_activation_email(self, token):
         """ Sends an email with activation instructions """
         url = f"https://{current_config.DOMAIN}{url_for('auth_blueprint.activate', token=token)}"
-        send_email(self.email, EmailTemplateNames.REGISTRATION,
+        send_email(self, EmailTemplateNames.REGISTRATION,
                    render_params={
                        "url": url
                    })
@@ -162,7 +169,7 @@ class User:
         """ Process an event of failed payment with Stripe """
         self._update("subscription_status", "invoice_payment_failed")
         self._update("is_paying", False)
-        send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
+        send_email(self, EmailTemplateNames.PAYMENT_PROBLEM,
                    render_params={
                        "subscription_status": "invoice_payment_failed",
                        "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
@@ -172,7 +179,7 @@ class User:
         """ Notify a user when something needs to be done manually to continue with payment """
         self._update("subscription_status", "payment_action_required")
         self._update("is_paying", False)
-        send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
+        send_email(self, EmailTemplateNames.PAYMENT_PROBLEM,
                    render_params={
                        "subscription_status": "payment_action_required",
                        "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
@@ -180,7 +187,7 @@ class User:
 
     def trial_end(self):
         """ Notify a user when a trial ends """
-        send_email(self.email, EmailTemplateNames.TRIAL_END,
+        send_email(self, EmailTemplateNames.TRIAL_END,
                    render_params={
                        "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
                    })
@@ -189,7 +196,7 @@ class User:
         """ Process an event when subscription has invalid status """
         self._update("subscription_status", status)
         self._update("is_paying", False)
-        send_email(self.email, EmailTemplateNames.PAYMENT_PROBLEM,
+        send_email(self, EmailTemplateNames.PAYMENT_PROBLEM,
                    render_params={
                        "subscription_status": status,
                        "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
@@ -199,7 +206,7 @@ class User:
         """ Process an event of deleting a subscription in Stripe """
         self._update("subscription_status", "deleted")
         self._update("is_paying", False)
-        send_email(self.email, EmailTemplateNames.SUBSCRIPTION_DELETED,
+        send_email(self, EmailTemplateNames.SUBSCRIPTION_DELETED,
                    render_params={
                        "payment_console": f"https://{current_config.DOMAIN}{url_for('payments_blueprint.index')}"
                    })

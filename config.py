@@ -15,14 +15,14 @@ class Config:
 
 class LocalConfig(Config):
     USERS_TABLE = os.environ.get('USERS_TABLE', 'mysaas-users-dev')
-    AUTH_TOKENS_TABLE = os.environ.get('AUTH_TOKENS_TABLE', 'mysaas-auth-dev')
+    AUTH_TOKENS_TABLE = os.environ.get('AUTH_TOKENS_TABLE', 'mysaas-tokens-dev')
     EVENT_TABLE = os.environ.get('EVENT_TABLE', 'mysaas-events-dev')
     DOMAIN = os.environ.get('DOMAIN', "mysaas.com")  # no http prefix and trailing slash
 
 
 class TestConfig(Config):
     USERS_TABLE = os.environ.get('USERS_TABLE', 'mysaas-users-dev')
-    AUTH_TOKENS_TABLE = os.environ.get('AUTH_TOKENS_TABLE', 'mysaas-auth-dev')
+    AUTH_TOKENS_TABLE = os.environ.get('AUTH_TOKENS_TABLE', 'mysaas-tokens-dev')
     EVENT_TABLE = os.environ.get('EVENT_TABLE', 'mysaas-events-dev')
     DOMAIN = os.environ.get('DOMAIN', "mysaas.com")  # no http prefix and trailing slash
 
