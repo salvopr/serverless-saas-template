@@ -4,6 +4,7 @@ from flask import request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.user import User
 from . import email_blueprint
+from app.exceptions import EmailProviderError
 
 
 @email_blueprint.route('/ses_notifications', methods=["POST"])
@@ -27,7 +28,7 @@ def ses_notifications():
         except Exception as e:
             traceback.print_exc()
             print(f"failed to process SES notification {notification}")
-            raise Exception('SES callback error ') from e
+            raise EmailProviderError('SES callback error ') from e
     return ''
 
 
